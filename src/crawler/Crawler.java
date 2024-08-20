@@ -4,6 +4,7 @@ import java.time.Duration;
 
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -21,23 +22,13 @@ public class Crawler {
 	private Logger logger;
 	private WebDriver driver;
 	private Wait<WebDriver> wait;
-	private CrawlerUtils utils;
 	private OcrFunctions ocr;
 	
 	public Crawler(Logger logger) {
 		this.logger = logger;
 		this.driver = initDriver();
-		this.utils = new CrawlerUtils();
 		this.ocr = new OcrFunctions();
 		this.logger.info("Crawler object initialized.");
-	}
-	
-	public Wait<WebDriver> getWait() {
-		return wait;
-	}
-
-	public void setWait(Wait<WebDriver> wait) {
-		this.wait = wait;
 	}
 	
 	private WebDriver initDriver() {
@@ -49,23 +40,75 @@ public class Crawler {
         options.addArguments("--disable-extensions");
         options.addArguments("--start-maximized");
 		WebDriver driver = new ChromeDriver(options);
-		this.setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
 		return driver;
 	}
 	
+	//
+	// Getters / setters
+	//
+	
+	public Wait<WebDriver> getWait() {
+		return wait;
+	}
+
+	public void setWait(Wait<WebDriver> wait) {
+		this.wait = wait;
+	}
+	
+	//
+	// Public API
+	//
+	
+	/**
+	 * Navigates to the "Tuotteet" page and waits for it to fully load
+	 * @return boolean
+	 * @throws CrawlerException
+	 */
 	public boolean openSokos() throws CrawlerException {
-		/**
-		 * Navigates to the "Tuotteet" page and waits for it to fully load
-		 */
 		this.driver.get("https://www.s-kaupat.fi/tuotteet/");
 		try {
 			this.ocr.closePossibleDefaultBrowserPrompt(this.logger);
 			this.ocr.closeCookieSettingsPrompt(this.logger);
-			//return driver find some sidebar element
+			return elementIsPresent("//span[text()='Tuotteet']");
 		} catch (Exception e) {
 			this.logger.error("Unable to detect sidebar!");
 			throw new CrawlerException(e.getMessage());
 		}
-		return false;
+	}
+	
+	//
+	// Private API
+	//
+	
+	/**
+	 * A quick wrapper for detecting if an element is present in the current state of DOM.
+	 * @param xpath
+	 * @return boolean
+	 */
+	private boolean elementIsPresent(String xpath) {
+		this.logger.info("Finding element with XPath: " + xpath);
+		try {
+            WebElement element = this.driver.findElement(By.xpath(xpath));
+            return element != null;
+        } catch (NoSuchElementException e) {
+            return false;
+        }
+	}
+	
+	/**
+	 * When looping the sidebar elements, always check if the sidebar is open already.
+	 * @return boolean
+	 */
+	private boolean sidebarIsOpen() {
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(5)));
+		boolean isPresent = elementIsPresent("//div[@data-test-id='product-navigation-category']");
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		if (isPresent) {
+			this.logger.info("Sidebar is open.");
+		} else {
+			this.logger.info("Sidebar is closed.");
+		}
+		return isPresent;
 	}
 }

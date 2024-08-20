@@ -12,6 +12,7 @@ public class Main {
 		Crawler crawler = new Crawler(logger);
 		// Sokos sokos = new Sokos()
 		if (crawler.openSokos()) {
+			System.out.println("success");
 			// ArrayList<SideMenuItem> menuItems = sokos.getSideMenuItems()
 			// for (SideMenuItem menuItem : menuItems) { }
 		}	
