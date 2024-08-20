@@ -12,11 +12,10 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import exceptions.CrawlerException;
 import ocr.OcrFunctions;
-
-import org.openqa.selenium.support.ui.ExpectedConditions;
 
 public class Crawler {
 	private Logger logger;
@@ -70,7 +69,11 @@ public class Crawler {
 		try {
 			this.ocr.closePossibleDefaultBrowserPrompt(this.logger);
 			this.ocr.closeCookieSettingsPrompt(this.logger);
-			return elementIsPresent("//span[text()='Tuotteet']");
+			if (elementIsPresent("//span[text()='Tuotteet']")) {
+				this.logger.info("S-Kaupat page opened successfully.");
+				return true;
+			}
+			throw new Exception("Expected element was not found with the provided XPath!");
 		} catch (Exception e) {
 			this.logger.error("Unable to detect sidebar!");
 			throw new CrawlerException(e.getMessage());
