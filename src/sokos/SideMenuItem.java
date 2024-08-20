@@ -4,9 +4,11 @@ public class SideMenuItem {
 	private Category category;
 	private String excelTitle;
 	private String sideBarTitle;
+	private String xpath;
 	
 	public SideMenuItem(Category category) {
 		this.category = category;
+		String commonXpath = "//div[text()='%s']/../..";
 		switch (category) {
 			case Category.FRUITS_AND_VEGGIES:
 				this.setExcelTitle("hedelmat_ja_vihannekset");
@@ -51,6 +53,7 @@ public class SideMenuItem {
 			default:
 				break;
 		}
+		this.setXpath(String.format(commonXpath, this.sideBarTitle));
 	}
 	
 	public Category getCategory() {
@@ -71,5 +74,13 @@ public class SideMenuItem {
 
 	public void setSideBarTitle(String sideBarTitle) {
 		this.sideBarTitle = sideBarTitle;
+	}
+
+	public String getXpath() {
+		return xpath;
+	}
+
+	public void setXpath(String xpath) {
+		this.xpath = xpath;
 	}
 }
