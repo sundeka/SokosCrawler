@@ -24,11 +24,14 @@ public class Main {
 			crawler.openCategory(menuItem);
 			for (String subMenuTitle : menuItem.getSubMenuTitles()) {
 				crawler.openSubMenu(subMenuTitle);
-				//for item in items
-				//	open_item()
-				//	raw_data = scrape()
-				//	ExcelEntry entry = excel.parse_data_from_raw(raw_data)
-				//	excel.append(menuItem.getExcelTitle(), entry)
+				for (String itemTitle : crawler.getItemTitles()) {
+					crawler.openItem(itemTitle);
+					String raw_data = crawler.scrapeNutritionInformation(itemTitle);
+					System.out.println(raw_data);
+					//ExcelEntry entry = excel.parse_data_from_raw(raw_data)
+					//excel.append(menuItem.getExcelTitle(), entry)
+					crawler.navigateBackToSubMenu(subMenuTitle);
+				}
 			}
 		}
 		crawler.quit();

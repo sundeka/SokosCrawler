@@ -7,12 +7,14 @@ import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.ElementNotInteractableException;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -90,7 +92,7 @@ public class Crawler {
 	}
 	
 	/**
-	 * 
+	 * Open a food category from the sidebar.
 	 * @param menuItem
 	 * @throws CrawlerException
 	 */
@@ -111,7 +113,8 @@ public class Crawler {
 	}
 	
 	/**
-	 * 
+	 * Once a category is selected from the side bar,
+	 * this method opens one of the sub menus (with green text). 
 	 * @param title
 	 * @throws CrawlerException
 	 */
@@ -123,21 +126,26 @@ public class Crawler {
 			waitForPresenceAndClick(xpath);
 		} catch (CrawlerException e) {
 			logger.warn("Unable to find sub menu on the first try. Checking if scrolling down will fix...");
-			scroll("//div[@data-test-id='product-navigation-subcategory']", 200);
+			scroll("//div[@data-test-id='product-navigation-subcategory']", 1000);
 			waitForPresenceAndClick(xpath);
 		}
 		waitForVisibility("//article[@data-product-id]");
 		logger.info("Sub menu successfully opened!");
-		Thread.sleep(5000);
+		Thread.sleep(1000);
 	}
 	
+	/**
+	 * Read the 8 top-most food items for looping.
+	 * @return
+	 * @throws InterruptedException
+	 */
 	public String[] getItemTitles() throws InterruptedException{
 		String[] titles = new String[8];
 		Thread.sleep(5000);
 		List<WebElement> elements = wait.until(
 				ExpectedConditions.visibilityOfAllElementsLocatedBy(
 						By.xpath("//a[@data-test-id='product-card__productName']")
-						)
+					)
 				);
 		for (int i=0;i<elements.size();i++) {
 			if (i==8) {
@@ -146,6 +154,68 @@ public class Crawler {
 			titles[i] = elements.get(i).getText();
 		}
 		return titles;
+	}
+	
+	/**
+	 * Open the item "card" and wait for it to load.
+	 * @param title
+	 * @throws CrawlerException
+	 * @throws InterruptedException
+	 */
+	public void openItem(String title) throws CrawlerException, InterruptedException {
+		String xpath;
+		if (title == null) {
+			// In case a sub menu has less than 8 items, 
+			// the remaining titles will have a null value.
+			// In this case, we can just skip them.
+			return;
+		}
+		xpath = "//a//span[text()='" + title + "']";
+		waitForPresenceAndClick(xpath);
+		Thread.sleep(3000);
+		xpath = "//div[@data-test-id='product-page-container']";
+		elementIsPresent(xpath);
+		logger.info("The item view for '" + title + "' should be open now.");
+	}
+	
+	/**
+	 * Return the nutrition information in raw form as parsed from the HTML tree.
+	 * @param itemTitle
+	 * @return
+	 * @throws CrawlerException
+	 * @throws InterruptedException
+	 */
+	public String scrapeNutritionInformation(String itemTitle) throws CrawlerException, InterruptedException {
+		String xpath;
+		xpath = "//details[@data-test-id='nutrients-info']";
+		try {
+			waitForPresenceAndClick(xpath);
+			Thread.sleep(3000);
+
+		} catch (CrawlerException e) {
+			logger.info("No nutrition information found for " + itemTitle);
+			Thread.sleep(3000);
+			return "";
+		}
+		xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
+		WebElement nutrientList = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
+		return nutrientList.getText();
+	}
+	
+	/**
+	 * Scroll back up and return to the list of products.
+	 * @param category
+	 */
+	public void navigateBackToSubMenu(String category) throws CrawlerException, InterruptedException {
+		String xpath;
+		xpath = "//div[@data-test-id='product-page-container']";
+		scrollToTopOfPage();
+		Thread.sleep(1000);
+		xpath = "//li//a[text()='" + category + "']";
+		waitForPresenceAndClick(xpath);
+		Thread.sleep(3000);
+		xpath = "//article[@data-test-id='product-card']";
+		waitForVisibility(xpath);
 	}
 	
 	
@@ -170,7 +240,6 @@ public class Crawler {
 	}
 	
 	/**
-	 * 
 	 * @param xpath
 	 * @throws CrawlerException
 	 */
@@ -182,19 +251,20 @@ public class Crawler {
 				throw new CrawlerException("Element with XPath '" + xpath + "' was not visible!");
 			}
 			logger.info("Found element with XPath '" + xpath + "'!");
-		} catch (ElementNotInteractableException e) {
+		} catch (ElementNotInteractableException | NoSuchElementException e) {
 			throw new CrawlerException("Element with XPath '" + xpath + "' was not visible!");
 		}
 	}
 	
 	/**
-	 * 
+	 * Use EC for more robust waiting for an element, combined with a click.
+	 * A common operation.
 	 * @param xpath
 	 * @throws CrawlerException
 	 */
 	private void waitForPresenceAndClick(String xpath) throws CrawlerException {
 		try {
-			Thread.sleep(5000);
+			Thread.sleep(4000);
 		} catch (InterruptedException e) {
 			throw new CrawlerException(e.getMessage());
 		}
@@ -205,13 +275,16 @@ public class Crawler {
 				throw new CrawlerException("Could not find the presence of element " + xpath);
 			}
 			element.click();
-		} catch (ElementNotInteractableException e) {
+		} catch (ElementNotInteractableException | NoSuchElementException e) {
 			throw new CrawlerException("Could not find the presence of element " + xpath);
 		}
 	}
 		
 		
-	
+	/**
+	 * Open the "Tuotteet" sidebar.
+	 * Do nothing if it is already open.
+	 */
 	private void openSideBar() {
 		if (!sidebarIsOpen()) {
 			logger.info("Opening side bar...");
@@ -244,7 +317,15 @@ public class Crawler {
 	 */
 	private void scroll(String xpath, int amount) {
 		WebElement sidebar = driver.findElement(By.xpath(xpath));
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        js.executeScript("arguments[0].scrollTop += " + amount + ";", sidebar);
+	    JavascriptExecutor js = (JavascriptExecutor) driver;
+	    js.executeScript("arguments[0].scrollTop += arguments[1];", sidebar, amount);
+	}
+	
+	/**
+	 * Workaround for cases where scrolling does not work.
+	 */
+	private void scrollToTopOfPage() {
+		Actions actions = new Actions(driver);
+        actions.sendKeys(Keys.HOME).perform();
 	}
 }
