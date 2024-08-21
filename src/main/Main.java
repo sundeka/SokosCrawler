@@ -17,16 +17,18 @@ public class Main {
 		Crawler crawler = new Crawler(logger);
 		Sokos sokos = new Sokos();
 		Excel excel = new Excel();
-		if (crawler.openSokos()) {
-			ArrayList<SideMenuItem> menuItems = sokos.getSideMenuItems();
-			for (SideMenuItem menuItem : menuItems) {
-				if (!excel.fileExists(menuItem.getExcelTitle())) {
-					crawler.openCategory(menuItem);
-					continue;
-				} else {
-					logger.info("Found Excel file for " + menuItem.getSideBarTitle() + ". Continuing to the next one...");
-				}
+		crawler.openSokos();
+		ArrayList<SideMenuItem> menuItems = sokos.getSideMenuItems();
+		for (SideMenuItem menuItem : menuItems) {
+			if (excel.fileExists(menuItem.getExcelTitle())) {
+				logger.info("Found Excel file for " + menuItem.getSideBarTitle() + ". Continuing to the next one...");
+				continue;
 			}
-		}	
+			crawler.openCategory(menuItem);
+			ArrayList<String> subMenuTitles = menuItem.getSubMenuTitles();
+			for (String subMenuTitle : subMenuTitles) {
+				crawler.openSubMenu(subMenuTitle);
+			}
+		}
 	}
 }

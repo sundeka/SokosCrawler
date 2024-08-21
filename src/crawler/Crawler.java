@@ -69,14 +69,14 @@ public class Crawler {
 	 * @return boolean
 	 * @throws CrawlerException
 	 */
-	public boolean openSokos() throws CrawlerException {
+	public void openSokos() throws CrawlerException {
 		driver.get("https://www.s-kaupat.fi/tuotteet/");
 		try {
 			ocr.closePossibleDefaultBrowserPrompt(logger);
 			ocr.closeCookieSettingsPrompt(logger);
-			if (elementIsPresent("//span[text()='Tuotteet']")) {
+			if (elementIsPresent("//a[@data-test-id='local-nav-products-container']")) {
 				logger.info("S-Kaupat page opened successfully.");
-				return true;
+				return;
 			}
 			throw new Exception("Expected element was not found with the provided XPath!");
 		} catch (Exception e) {
@@ -92,23 +92,38 @@ public class Crawler {
 	 */
 	public void openCategory(SideMenuItem menuItem) throws CrawlerException {
 		logger.info("Opening " + menuItem.getSideBarTitle() + "...");
-		if (!sidebarIsOpen()) {
-			logger.info("Opening side bar...");
-			WebElement sideBarToggle = driver.findElement(By.xpath("//a[@href='/tuotteet'][@data-test-id='local-nav-products-container']"));
-			sideBarToggle.click();
-			logger.info("Sidebar opened.");
-		}
+		openSideBar();
 		logger.info("Finding sidebar item with XPath: " + menuItem.getXpath());
 		try {
-			wait_for_presence_and_click(menuItem.getXpath());
+			waitForPresenceAndClick(menuItem.getXpath());
 		} catch (CrawlerException e) {
 			logger.warn("Unable to find category on the first try. Checking if scrolling down will fix...");
 			scroll("//div[@data-test-id='product-navigation-category']", 200);
-			wait_for_presence_and_click(menuItem.getXpath());
+			waitForPresenceAndClick(menuItem.getXpath());
 		}
 		logger.info("Category opened. Waiting for confirmation...");
-		wait_for_visibility("//a[@data-test-id='product-navigation-subcategory-child-item']");
+		waitForVisibility("//a[@data-test-id='product-navigation-subcategory-child-item']");
 		logger.info("Category successfully opened!");
+	}
+	
+	/**
+	 * 
+	 * @param title
+	 * @throws CrawlerException
+	 */
+	public void openSubMenu(String title) throws CrawlerException {
+		openSideBar();
+		String xpath = "//a[@data-test-id='product-navigation-subcategory-item-title'][text()='" + title + "']";
+		logger.info("Finding sub menu with XPath '" + xpath + "'...");
+		try {
+			waitForPresenceAndClick(xpath);
+		} catch (CrawlerException e) {
+			logger.warn("Unable to find sub menu on the first try. Checking if scrolling down will fix...");
+			scroll("//div[@data-test-id='product-navigation-subcategory']", 200);
+			waitForPresenceAndClick(xpath);
+		}
+		waitForVisibility("//article[@data-product-id]");
+		logger.info("Sub menu successfully opened!");
 	}
 	
 	
@@ -137,7 +152,7 @@ public class Crawler {
 	 * @param xpath
 	 * @throws CrawlerException
 	 */
-	private void wait_for_visibility(String xpath) throws CrawlerException {
+	private void waitForVisibility(String xpath) throws CrawlerException {
 		logger.info("Checking if element with XPath '" + xpath + "' is clickable...");
 		try {
 			WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
@@ -155,7 +170,7 @@ public class Crawler {
 	 * @param xpath
 	 * @throws CrawlerException
 	 */
-	private void wait_for_presence_and_click(String xpath) throws CrawlerException {
+	private void waitForPresenceAndClick(String xpath) throws CrawlerException {
 		logger.info("Checking if element with XPath '" + xpath + "' is clickable...");
 		try {
 			WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
@@ -169,6 +184,15 @@ public class Crawler {
 	}
 		
 		
+	
+	private void openSideBar() {
+		if (!sidebarIsOpen()) {
+			logger.info("Opening side bar...");
+			WebElement sideBarToggle = driver.findElement(By.xpath("//a[@href='/tuotteet'][@data-test-id='local-nav-products-container']"));
+			sideBarToggle.click();
+			logger.info("Sidebar opened.");
+		}
+	}
 	
 	/**
 	 * When looping the sidebar elements, always check if the sidebar is open already.
@@ -195,6 +219,5 @@ public class Crawler {
 		WebElement sidebar = driver.findElement(By.xpath(xpath));
         JavascriptExecutor js = (JavascriptExecutor) driver;
         js.executeScript("arguments[0].scrollTop += " + amount + ";", sidebar);
-
 	}
 }
