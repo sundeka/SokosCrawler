@@ -1,6 +1,7 @@
 package crawler;
 
 import java.time.Duration;
+import java.util.List;
 
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
@@ -128,6 +129,23 @@ public class Crawler {
 		waitForVisibility("//article[@data-product-id]");
 		logger.info("Sub menu successfully opened!");
 		Thread.sleep(5000);
+	}
+	
+	public String[] getItemTitles() throws InterruptedException{
+		String[] titles = new String[8];
+		Thread.sleep(5000);
+		List<WebElement> elements = wait.until(
+				ExpectedConditions.visibilityOfAllElementsLocatedBy(
+						By.xpath("//a[@data-test-id='product-card__productName']")
+						)
+				);
+		for (int i=0;i<elements.size();i++) {
+			if (i==8) {
+				break;
+			}
+			titles[i] = elements.get(i).getText();
+		}
+		return titles;
 	}
 	
 	
