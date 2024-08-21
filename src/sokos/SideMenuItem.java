@@ -19,8 +19,8 @@ public class SideMenuItem {
 				this.setSideBarTitle("Leivät, keksit ja leivonnaiset");
 				break;
 			case Category.MEAT_AND_PROTEIN:
-				this.setExcelTitle("liha_ja_kasvisproteiinit");
-				this.setSideBarTitle("Liha ja kasvisproteiinit");
+				this.setExcelTitle("liha_ja_kasviproteiinit");
+				this.setSideBarTitle("Liha ja kasviproteiinit");
 				break;
 			case Category.FISH:
 				this.setExcelTitle("kala_ja_merenelavat");

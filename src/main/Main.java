@@ -21,10 +21,10 @@ public class Main {
 			ArrayList<SideMenuItem> menuItems = sokos.getSideMenuItems();
 			for (SideMenuItem menuItem : menuItems) {
 				if (!excel.fileExists(menuItem.getExcelTitle())) {
-					// TODO: Crawler stuff
+					crawler.openCategory(menuItem);
 					continue;
 				} else {
-					logger.info("Already handled Excel file '" + menuItem.getExcelTitle() + "' on the crashed run, continuing to the next one.");
+					logger.info("Found Excel file for " + menuItem.getSideBarTitle() + ". Continuing to the next one...");
 				}
 			}
 		}	
