@@ -4,7 +4,7 @@ import java.time.Duration;
 
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
-import org.openqa.selenium.ElementClickInterceptedException;
+import org.openqa.selenium.ElementNotInteractableException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
@@ -63,6 +63,9 @@ public class Crawler {
 	// Public API
 	//
 	
+	public void quit() {
+		driver.quit();
+	}
 	
 	/**
 	 * Navigates to the "Tuotteet" page and waits for it to fully load
@@ -111,7 +114,7 @@ public class Crawler {
 	 * @param title
 	 * @throws CrawlerException
 	 */
-	public void openSubMenu(String title) throws CrawlerException {
+	public void openSubMenu(String title) throws CrawlerException, InterruptedException {
 		openSideBar();
 		String xpath = "//a[@data-test-id='product-navigation-subcategory-item-title'][text()='" + title + "']";
 		logger.info("Finding sub menu with XPath '" + xpath + "'...");
@@ -124,6 +127,7 @@ public class Crawler {
 		}
 		waitForVisibility("//article[@data-product-id]");
 		logger.info("Sub menu successfully opened!");
+		Thread.sleep(5000);
 	}
 	
 	
@@ -160,7 +164,7 @@ public class Crawler {
 				throw new CrawlerException("Element with XPath '" + xpath + "' was not visible!");
 			}
 			logger.info("Found element with XPath '" + xpath + "'!");
-		} catch (ElementClickInterceptedException e) {
+		} catch (ElementNotInteractableException e) {
 			throw new CrawlerException("Element with XPath '" + xpath + "' was not visible!");
 		}
 	}
@@ -171,6 +175,11 @@ public class Crawler {
 	 * @throws CrawlerException
 	 */
 	private void waitForPresenceAndClick(String xpath) throws CrawlerException {
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			throw new CrawlerException(e.getMessage());
+		}
 		logger.info("Checking if element with XPath '" + xpath + "' is clickable...");
 		try {
 			WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
@@ -178,7 +187,7 @@ public class Crawler {
 				throw new CrawlerException("Could not find the presence of element " + xpath);
 			}
 			element.click();
-		} catch (ElementClickInterceptedException e) {
+		} catch (ElementNotInteractableException e) {
 			throw new CrawlerException("Could not find the presence of element " + xpath);
 		}
 	}

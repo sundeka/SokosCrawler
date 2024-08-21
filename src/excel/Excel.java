@@ -1,6 +1,14 @@
 package excel;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 public class Excel {
+	Path path;
+	
+	public Excel(String path) {
+		this.path = Paths.get(path);
+	}
 	
 	/**
 	 * 
@@ -9,5 +17,9 @@ public class Excel {
 	 */
 	public boolean fileExists(String fileName) {
 		return false;
+	}
+	
+	public Path getPath() {
+		return this.path;
 	}
 }
