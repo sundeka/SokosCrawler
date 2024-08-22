@@ -2,6 +2,7 @@ package excel;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 
 public class Excel {
 	Path path;
@@ -17,6 +18,10 @@ public class Excel {
 	 */
 	public boolean fileExists(String fileName) {
 		return false;
+	}
+	
+	public void append(String fileName, String itemName, HashMap<String, double[]> data) {
+		
 	}
 	
 	public Path getPath() {

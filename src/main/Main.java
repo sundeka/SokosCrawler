@@ -1,5 +1,7 @@
 package main;
 
+import java.util.HashMap;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import crawler.Crawler;
@@ -26,13 +28,14 @@ public class Main {
 				crawler.openSubMenu(subMenuTitle);
 				for (String itemTitle : crawler.getItemTitles()) {
 					crawler.openItem(itemTitle);
-					String raw_data = crawler.scrapeNutritionInformation(itemTitle);
-					System.out.println(raw_data);
-					//ExcelEntry entry = excel.parse_data_from_raw(raw_data)
-					//excel.append(menuItem.getExcelTitle(), entry)
+					HashMap<String, double[]> nutritionData = crawler.scrapeNutritionInformation(itemTitle);
 					crawler.navigateBackToSubMenu(subMenuTitle);
+					excel.append(menuItem.getExcelTitle(), itemTitle, nutritionData);
+					logger.info("Finished handling menu item: " + itemTitle);
 				}
+				logger.info("Finished handling sub menu: " + subMenuTitle);
 			}
+			logger.info("Finished handling category: " + menuItem.getSideBarTitle());
 		}
 		crawler.quit();
 		logger.info("Run finished successfully!");

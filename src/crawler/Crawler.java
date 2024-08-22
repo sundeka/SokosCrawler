@@ -1,7 +1,10 @@
 package crawler;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
@@ -20,6 +23,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import exceptions.CrawlerException;
+import io.opentelemetry.api.internal.Utils;
 import ocr.OcrFunctions;
 import sokos.SideMenuItem;
 
@@ -28,11 +32,13 @@ public class Crawler {
 	private WebDriver driver;
 	private Wait<WebDriver> wait;
 	private OcrFunctions ocr;
+	private CrawlerStringUtils stringUtils;
 	
 	public Crawler(Logger logger) {
 		this.logger = logger;
 		driver = initDriver();
 		ocr = new OcrFunctions();
+		stringUtils = new CrawlerStringUtils();
 		logger.info("Crawler object initialized.");
 	}
 	
@@ -185,9 +191,8 @@ public class Crawler {
 	 * @throws CrawlerException
 	 * @throws InterruptedException
 	 */
-	public String scrapeNutritionInformation(String itemTitle) throws CrawlerException, InterruptedException {
-		String xpath;
-		xpath = "//details[@data-test-id='nutrients-info']";
+	public HashMap<String, double[]> scrapeNutritionInformation(String itemTitle) throws CrawlerException, InterruptedException {
+		String xpath = "//details[@data-test-id='nutrients-info']";
 		try {
 			waitForPresenceAndClick(xpath);
 			Thread.sleep(3000);
@@ -195,12 +200,11 @@ public class Crawler {
 		} catch (CrawlerException e) {
 			logger.info("No nutrition information found for " + itemTitle);
 			Thread.sleep(3000);
-			return "";
-		}
-		xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
-		WebElement nutrientList = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
-		return nutrientList.getText();
+			return new HashMap<>();
+		}		
+		return createSequenceFromRawText();
 	}
+		
 	
 	/**
 	 * Scroll back up and return to the list of products.
@@ -308,6 +312,53 @@ public class Crawler {
 			logger.info("Sidebar is closed.");
 		}
 		return isPresent;
+	}
+	
+	/**
+	 * Parse the raw text from the nutrition info list
+	 * @return
+	 */
+	private HashMap<String, double[]> createSequenceFromRawText() {
+		// Wait for the nutritent list to load properly
+		String xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
+		wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
+		
+		// Initialize HashMap where values will be stored
+		HashMap<String, double[]> attributes = new HashMap<>();
+		attributes.put("Energiaa", null);
+		attributes.put("Rasvaa", null);
+		attributes.put("Rasvaa, josta tyydyttyneitä rasvoja", null);
+		attributes.put("Hiilihydraattia", null);
+		attributes.put("Ravintokuitua", null);
+		attributes.put("Proteiinia", null);
+		attributes.put("Suolaa", null);
+			
+		// Iterate rows
+		for (String attribute : attributes.keySet()) {
+			// Initialize required XPaths
+			String commonXpath = "//div[@class='cell'][text()='"+ attribute + "']";
+			String perHundredGramsXpath = commonXpath + "/following-sibling::div";
+			String recommendedIntakeXpath = perHundredGramsXpath + "/following-sibling::div";
+				
+			// Find elements
+			String perHundredGramsText = driver.findElement(By.xpath(perHundredGramsXpath)).getText();
+			String recommendedIntakeText = driver.findElement(By.xpath(recommendedIntakeXpath)).getText();
+			
+			// Parse accordingly
+			double recommendedIntake = this.stringUtils.convertToDouble(Attribute.RECOMMENDED_INTAKE, recommendedIntakeText);
+			if (attribute.equals("Energiaa")) {
+				double kcal = this.stringUtils.convertToDouble(Attribute.KCAL, perHundredGramsText);
+				double[] result = {kcal, recommendedIntake};
+				attributes.put(attribute, result);
+			} else {
+				double grams = this.stringUtils.convertToDouble(Attribute.GRAMS, perHundredGramsText);
+				double[] result = {grams, recommendedIntake};
+				attributes.put(attribute, result);
+			}
+		}
+		System.out.println(attributes);
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		return attributes;
 	}
 	
 	/**
