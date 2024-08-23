@@ -142,12 +142,12 @@ public class Crawler {
 	}
 	
 	/**
-	 * Read the 8 top-most food items for looping.
+	 * Read the 14 top-most food items for looping.
 	 * @return
 	 * @throws InterruptedException
 	 */
 	public String[] getItemTitles() throws InterruptedException{
-		String[] titles = new String[8];
+		String[] titles = new String[14];
 		Thread.sleep(5000);
 		List<WebElement> elements = wait.until(
 				ExpectedConditions.visibilityOfAllElementsLocatedBy(
@@ -155,7 +155,7 @@ public class Crawler {
 					)
 				);
 		for (int i=0;i<elements.size();i++) {
-			if (i==8) {
+			if (i==14) {
 				break;
 			}
 			titles[i] = elements.get(i).getText();
