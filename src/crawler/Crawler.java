@@ -52,7 +52,7 @@ public class Crawler {
         options.addArguments("--disable-extensions");
         options.addArguments("--start-maximized");
 		WebDriver driver = new ChromeDriver(options);
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(5)));
 		return driver;
 	}
 	
@@ -148,7 +148,7 @@ public class Crawler {
 	 */
 	public String[] getItemTitles() throws InterruptedException{
 		String[] titles = new String[14];
-		Thread.sleep(5000);
+		Thread.sleep(1000);
 		List<WebElement> elements = wait.until(
 				ExpectedConditions.visibilityOfAllElementsLocatedBy(
 						By.xpath("//a[@data-test-id='product-card__productName']")
@@ -179,7 +179,7 @@ public class Crawler {
 		}
 		xpath = "//a//span[text()='" + title + "']";
 		waitForPresenceAndClick(xpath);
-		Thread.sleep(3000);
+		Thread.sleep(1000);
 		xpath = "//div[@data-test-id='product-page-container']";
 		elementIsPresent(xpath);
 		logger.info("The item view for '" + title + "' should be open now.");
@@ -196,11 +196,11 @@ public class Crawler {
 		String xpath = "//details[@data-test-id='nutrients-info']";
 		try {
 			waitForPresenceAndClick(xpath);
-			Thread.sleep(3000);
+			Thread.sleep(1500);
 
 		} catch (CrawlerException e) {
 			logger.info("No nutrition information found for " + itemTitle);
-			Thread.sleep(3000);
+			Thread.sleep(1500);
 			return new HashMap<String, double[]>();
 		}
 		// Wait for the nutritent list to load properly
@@ -208,7 +208,7 @@ public class Crawler {
 		wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
 		setWait(new WebDriverWait(driver, Duration.ofSeconds(1)));
 		HashMap<String, double[]> data = parseNutritionalInfo(); 
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(5)));
 		return data;
 	}
 		
@@ -224,7 +224,7 @@ public class Crawler {
 		Thread.sleep(1000);
 		xpath = "//li//a[text()='" + category + "']";
 		waitForPresenceAndClick(xpath);
-		Thread.sleep(3000);
+		Thread.sleep(1000);
 		xpath = "//article[@data-test-id='product-card']";
 		waitForVisibility(xpath);
 	}
@@ -310,9 +310,7 @@ public class Crawler {
 	 * @return boolean
 	 */
 	private boolean sidebarIsOpen() {
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(5)));
 		boolean isPresent = elementIsPresent("//div[@data-test-id='product-navigation-category']");
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
 		if (isPresent) {
 			logger.info("Sidebar is open.");
 		} else {
