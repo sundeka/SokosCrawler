@@ -46,7 +46,7 @@ public class Excel {
 		titleCell.setCellValue(headerTitle);
 		
 		Row columnRow = this.sheet.createRow(rowNum + 2);
-		for (int i=0;i<14;i++) {
+		for (int i=0;i<13;i++) {
 			Cell cell = columnRow.createCell(i);
 			if (i == 0) {
 				cell.setCellValue("name");
@@ -73,10 +73,8 @@ public class Excel {
 			} else if (i == 11) {
 				cell.setCellValue("carbs RI");
 			} else if (i == 12) {
-				cell.setCellValue("fiber RI");
-			} else if (i == 13) {
 				cell.setCellValue("protein RI");
-			} else if (i == 14) {
+			} else if (i == 13) {
 				cell.setCellValue("salt RI");
 			}
 		}
@@ -86,7 +84,7 @@ public class Excel {
 	public void createDataRow(ExcelEntry entry) {
 		int rowNum = this.sheet.getLastRowNum() + 1; // Starts at -1 which causes error...?
 		Row dataRow = this.sheet.createRow(rowNum);
-		for (int i=0;i<14;i++) {
+		for (int i=0;i<13;i++) {
 			Cell cell = dataRow.createCell(i);
 			if (i == 0) {
 				cell.setCellValue(entry.name);
@@ -113,10 +111,8 @@ public class Excel {
 			} else if (i == 11) {
 				cell.setCellValue(entry.riCarbs);
 			} else if (i == 12) {
-				cell.setCellValue(entry.riFiber);
-			} else if (i == 13) {
 				cell.setCellValue(entry.riProtein);
-			} else if (i == 14) {
+			} else if (i == 13) {
 				cell.setCellValue(entry.riSalt);
 			}
 		}

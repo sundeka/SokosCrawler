@@ -15,7 +15,6 @@ public class ExcelEntry {
 	double riFat;
 	double riFatSaturated;
 	double riCarbs;
-	double riFiber;
 	double riProtein;
 	double riSalt;
 	
@@ -31,7 +30,7 @@ public class ExcelEntry {
 			this.carbs = data.get("Hiilihydraattia")[0];
 			this.riCarbs = data.get("Hiilihydraattia")[1];
 			this.fiber = data.get("Ravintokuitua")[0];
-			this.riFiber = data.get("Ravintokuitua")[1];
+			// Turns out fiber RI is ALWAYS 0. It is being omitted.
 			this.protein = data.get("Proteiinia")[0];
 			this.riProtein = data.get("Proteiinia")[1];
 			this.salt = data.get("Suolaa")[0];
