@@ -3,15 +3,15 @@ package crawler;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.ElementNotInteractableException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
@@ -24,7 +24,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import exceptions.CrawlerException;
-import io.opentelemetry.api.internal.Utils;
 import ocr.OcrFunctions;
 import sokos.SideMenuItem;
 
@@ -52,7 +51,7 @@ public class Crawler {
         options.addArguments("--disable-extensions");
         options.addArguments("--start-maximized");
 		WebDriver driver = new ChromeDriver(options);
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(5)));
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
 		return driver;
 	}
 	
@@ -125,7 +124,7 @@ public class Crawler {
 	 * @param title
 	 * @throws CrawlerException
 	 */
-	public void openSubMenu(String title) throws CrawlerException, InterruptedException {
+	public void openSubMenu(String title) throws CrawlerException {
 		openSideBar();
 		String xpath = "//a[@data-test-id='product-navigation-subcategory-item-title'][text()='" + title + "']";
 		logger.info("Finding sub menu with XPath '" + xpath + "'...");
@@ -136,9 +135,13 @@ public class Crawler {
 			scroll("//div[@data-test-id='product-navigation-subcategory']", 1000);
 			waitForPresenceAndClick(xpath);
 		}
+		try {
+			Thread.sleep(5000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		waitForVisibility("//article[@data-product-id]");
 		logger.info("Sub menu successfully opened!");
-		Thread.sleep(1000);
 	}
 	
 	/**
@@ -146,9 +149,8 @@ public class Crawler {
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public String[] getItemTitles() throws InterruptedException{
+	public String[] getItemTitles() {
 		String[] titles = new String[14];
-		Thread.sleep(1000);
 		List<WebElement> elements = wait.until(
 				ExpectedConditions.visibilityOfAllElementsLocatedBy(
 						By.xpath("//a[@data-test-id='product-card__productName']")
@@ -169,7 +171,7 @@ public class Crawler {
 	 * @throws CrawlerException
 	 * @throws InterruptedException
 	 */
-	public void openItem(String title) throws CrawlerException, InterruptedException {
+	public void openItem(String title) throws CrawlerException {
 		String xpath;
 		if (title == null) {
 			// In case a sub menu has less than 8 items, 
@@ -177,9 +179,8 @@ public class Crawler {
 			// In this case, we can just skip them.
 			return;
 		}
-		xpath = "//a//span[text()='" + title + "']";
+		xpath = "//a//span[text()=\"" + title + "\"]";
 		waitForPresenceAndClick(xpath);
-		Thread.sleep(1000);
 		xpath = "//div[@data-test-id='product-page-container']";
 		elementIsPresent(xpath);
 		logger.info("The item view for '" + title + "' should be open now.");
@@ -192,23 +193,23 @@ public class Crawler {
 	 * @throws CrawlerException
 	 * @throws InterruptedException
 	 */
-	public HashMap<String, double[]> scrapeNutritionInformation(String itemTitle) throws CrawlerException, InterruptedException {
+	public HashMap<String, double[]> scrapeNutritionInformation(String itemTitle) throws CrawlerException {
 		String xpath = "//details[@data-test-id='nutrients-info']";
 		try {
+			Thread.sleep(1000);
 			waitForPresenceAndClick(xpath);
-			Thread.sleep(1500);
-
 		} catch (CrawlerException e) {
 			logger.info("No nutrition information found for " + itemTitle);
-			Thread.sleep(1500);
 			return new HashMap<String, double[]>();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 		// Wait for the nutritent list to load properly
 		xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
 		wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
 		setWait(new WebDriverWait(driver, Duration.ofSeconds(1)));
 		HashMap<String, double[]> data = parseNutritionalInfo(); 
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(5)));
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
 		return data;
 	}
 		
@@ -217,14 +218,21 @@ public class Crawler {
 	 * Scroll back up and return to the list of products.
 	 * @param category
 	 */
-	public void navigateBackToSubMenu(String category) throws CrawlerException, InterruptedException {
+	public void navigateBackToSubMenu(String category) throws CrawlerException {
 		String xpath;
 		xpath = "//div[@data-test-id='product-page-container']";
 		scrollToTopOfPage();
-		Thread.sleep(1000);
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		xpath = "//li//a[text()='" + category + "']";
-		waitForPresenceAndClick(xpath);
-		Thread.sleep(1000);
+		try {
+			waitForPresenceAndClick(xpath);
+		} catch (CrawlerException e) {
+			this.driver.navigate().back();
+		}
 		xpath = "//article[@data-test-id='product-card']";
 		waitForVisibility(xpath);
 	}
@@ -257,10 +265,7 @@ public class Crawler {
 	private void waitForVisibility(String xpath) throws CrawlerException {
 		logger.info("Checking if element with XPath '" + xpath + "' is clickable...");
 		try {
-			WebElement element = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
-			if (element == null) {
-				throw new CrawlerException("Element with XPath '" + xpath + "' was not visible!");
-			}
+			wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath(xpath)));
 			logger.info("Found element with XPath '" + xpath + "'!");
 		} catch (ElementNotInteractableException | NoSuchElementException e) {
 			throw new CrawlerException("Element with XPath '" + xpath + "' was not visible!");
@@ -274,20 +279,15 @@ public class Crawler {
 	 * @throws CrawlerException
 	 */
 	private void waitForPresenceAndClick(String xpath) throws CrawlerException {
-		try {
-			Thread.sleep(4000);
-		} catch (InterruptedException e) {
-			throw new CrawlerException(e.getMessage());
-		}
 		logger.info("Checking if element with XPath '" + xpath + "' is clickable...");
 		try {
 			WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
-			if (element == null) {
-				throw new CrawlerException("Could not find the presence of element " + xpath);
-			}
 			element.click();
-		} catch (ElementNotInteractableException | TimeoutException | NoSuchElementException e) {
+		} catch (ElementClickInterceptedException | NoSuchElementException | TimeoutException e) {
 			throw new CrawlerException("Could not find the presence of element " + xpath);
+		} catch (StaleElementReferenceException | ElementNotInteractableException e) {
+			WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
+			element.click();
 		}
 	}
 		
@@ -295,12 +295,12 @@ public class Crawler {
 	/**
 	 * Open the "Tuotteet" sidebar.
 	 * Do nothing if it is already open.
+	 * @throws CrawlerException 
 	 */
-	private void openSideBar() {
+	private void openSideBar() throws CrawlerException {
 		if (!sidebarIsOpen()) {
 			logger.info("Opening side bar...");
-			WebElement sideBarToggle = driver.findElement(By.xpath("//a[@href='/tuotteet'][@data-test-id='local-nav-products-container']"));
-			sideBarToggle.click();
+			waitForPresenceAndClick("//a[@href='/tuotteet'][@data-test-id='local-nav-products-container']");
 			logger.info("Sidebar opened.");
 		}
 	}

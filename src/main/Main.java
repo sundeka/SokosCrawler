@@ -17,7 +17,7 @@ import sokos.Sokos;
 public class Main {
 	private static final Logger logger = LogManager.getLogger("CrawlerLogger");
 	
-	public static void main(String[] args) throws CrawlerException,InterruptedException {
+	public static void main(String[] args) throws CrawlerException {
 		Path excelFolder = Paths.get("C:\\Users\\sunde\\Desktop\\excels");
 		Crawler crawler = new Crawler(logger);
 		Sokos sokos = new Sokos();
