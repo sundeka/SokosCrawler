@@ -12,6 +12,7 @@ import org.openqa.selenium.ElementNotInteractableException;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -200,7 +201,7 @@ public class Crawler {
 		} catch (CrawlerException e) {
 			logger.info("No nutrition information found for " + itemTitle);
 			Thread.sleep(3000);
-			return new HashMap<>();
+			return new HashMap<String, double[]>();
 		}
 		// Wait for the nutritent list to load properly
 		xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
@@ -285,7 +286,7 @@ public class Crawler {
 				throw new CrawlerException("Could not find the presence of element " + xpath);
 			}
 			element.click();
-		} catch (ElementNotInteractableException | NoSuchElementException e) {
+		} catch (ElementNotInteractableException | TimeoutException | NoSuchElementException e) {
 			throw new CrawlerException("Could not find the presence of element " + xpath);
 		}
 	}

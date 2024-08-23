@@ -10,6 +10,7 @@ import crawler.Crawler;
 import excel.Excel;
 import excel.ExcelEntry;
 import exceptions.CrawlerException;
+import exceptions.ExcelException;
 import sokos.SideMenuItem;
 import sokos.Sokos;
 
@@ -22,15 +23,17 @@ public class Main {
 		Sokos sokos = new Sokos();
 		crawler.openSokos();
 		for (SideMenuItem menuItem : sokos.getSideMenuItems()) {
-			Excel excel = new Excel(
-					excelFolder,
-					menuItem.getExcelTitle(),
-					logger
-				);
-			if (excel.fileExists()) {
-				logger.info("Found Excel file for " + menuItem.getSideBarTitle() + ". Continuing to the next one...");
+			Excel excel;
+			try {
+				excel = new Excel(
+						excelFolder,
+						menuItem.getExcelTitle(),
+						logger
+					);
+			} catch (ExcelException e) {
+				// File already exists from crashed run. Continue to next.
 				continue;
-			} 
+			}
 			crawler.openCategory(menuItem);
 			for (String subMenuTitle : menuItem.getSubMenuTitles()) {
 				excel.createHeaderRow(subMenuTitle);
@@ -40,7 +43,7 @@ public class Main {
 					HashMap<String, double[]> nutritionData = crawler.scrapeNutritionInformation(itemTitle);
 					crawler.navigateBackToSubMenu(subMenuTitle);
 					ExcelEntry entry = new ExcelEntry(itemTitle, nutritionData);
-					excel.append(entry);
+					excel.createDataRow(entry);
 					logger.info("Finished handling menu item: " + itemTitle);
 				}
 				logger.info("Finished handling sub menu: " + subMenuTitle);
