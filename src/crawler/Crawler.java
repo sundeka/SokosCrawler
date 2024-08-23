@@ -201,8 +201,14 @@ public class Crawler {
 			logger.info("No nutrition information found for " + itemTitle);
 			Thread.sleep(3000);
 			return new HashMap<>();
-		}		
-		return createSequenceFromRawText();
+		}
+		// Wait for the nutritent list to load properly
+		xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
+		wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(1)));
+		HashMap<String, double[]> data = parseNutritionalInfo(); 
+		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		return data;
 	}
 		
 	
@@ -315,14 +321,10 @@ public class Crawler {
 	}
 	
 	/**
-	 * Parse the raw text from the nutrition info list
+	 * Parse the raw text from the nutrition info list using regex and convert to HashMap for easier handling
 	 * @return
 	 */
-	private HashMap<String, double[]> createSequenceFromRawText() {
-		// Wait for the nutritent list to load properly
-		String xpath = "//div[@data-test-id='nutrients-info-per-unit-content']";
-		wait.until(ExpectedConditions.presenceOfElementLocated(By.xpath(xpath)));
-		
+	private HashMap<String, double[]> parseNutritionalInfo() {
 		// Initialize HashMap where values will be stored
 		HashMap<String, double[]> attributes = new HashMap<>();
 		attributes.put("Energiaa", null);
@@ -355,9 +357,7 @@ public class Crawler {
 				double[] result = {grams, recommendedIntake};
 				attributes.put(attribute, result);
 			}
-		}
-		System.out.println(attributes);
-		setWait(new WebDriverWait(driver, Duration.ofSeconds(10)));
+		}		
 		return attributes;
 	}
 	
