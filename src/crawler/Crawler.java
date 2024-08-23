@@ -351,6 +351,8 @@ public class Crawler {
 				recommendedIntakeText = driver.findElement(By.xpath(recommendedIntakeXpath)).getText();
 			} catch (NoSuchElementException e) {
 				logger.info("Attribute '" + attribute + "' was not present. Skipping...");
+				double[] result = {0.0, 0.0};
+				attributes.put(attribute, result);
 				continue;
 			}
 			
