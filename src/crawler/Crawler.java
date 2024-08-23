@@ -344,8 +344,15 @@ public class Crawler {
 			String recommendedIntakeXpath = perHundredGramsXpath + "/following-sibling::div";
 				
 			// Find elements
-			String perHundredGramsText = driver.findElement(By.xpath(perHundredGramsXpath)).getText();
-			String recommendedIntakeText = driver.findElement(By.xpath(recommendedIntakeXpath)).getText();
+			String perHundredGramsText;
+			String recommendedIntakeText;
+			try {
+				perHundredGramsText = driver.findElement(By.xpath(perHundredGramsXpath)).getText();
+				recommendedIntakeText = driver.findElement(By.xpath(recommendedIntakeXpath)).getText();
+			} catch (NoSuchElementException e) {
+				logger.info("Attribute '" + attribute + "' was not present. Skipping...");
+				continue;
+			}
 			
 			// Parse accordingly
 			double recommendedIntake = this.stringUtils.convertToDouble(Attribute.RECOMMENDED_INTAKE, recommendedIntakeText);
